@@ -8,8 +8,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    // 1. Updated 2026 Router URL
-    // The path structure is now: https://router.huggingface.co/hf-inference/models/...
     const response = await fetch(
       "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
       {
@@ -22,7 +20,6 @@ export async function POST(req: Request) {
       }
     );
 
-    // 2. Error Handling for the Router
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error("Router Error:", errorData);
@@ -32,7 +29,6 @@ export async function POST(req: Request) {
       }, { status: response.status });
     }
 
-    // 3. Process the Image
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
