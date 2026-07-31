@@ -32,7 +32,8 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Failed to generate image");
 
       if (data.base64) {
-        setImage(`data:image/png;base64,${data.base64}`);
+        const mime = data.mimeType || "image/jpeg";
+        setImage(`data:${mime};base64,${data.base64}`);
       }
     } catch (err: any) {
       setError(err.message);
@@ -46,9 +47,9 @@ export default function Home() {
 
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-          Neural Canvas
+          Ai Image Generator
         </h1>
-        <p className="text-slate-500 font-mono text-sm mt-2 mt-2">v2.5.stable.release</p>
+        <p className="text-slate-500 font-mono text-sm mt-2 ">Generate images from text prompts</p>
       </div>
 
       

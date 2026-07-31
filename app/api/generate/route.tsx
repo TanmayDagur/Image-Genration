@@ -8,39 +8,56 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    // 1. Updated 2026 Router URL
-    // The path structure is now: https://router.huggingface.co/hf-inference/models/...
-    const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({ inputs: prompt }),
-      }
-    );
+    // Pollinations.ai — free, no API key needed, works everywhere.
+    // Uses FLUX under the hood. Returns image as binary directly via GET request.
+    const seed = Math.floor(Math.random() * 1000000);
+    const encodedPrompt = encodeURIComponent(prompt);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=1024&height=1024&seed=${seed}&nologo=true`;
 
-    // 2. Error Handling for the Router
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Router Error:", errorData);
-      
-      return NextResponse.json({ 
-        error: errorData.error || "The AI router is busy. Try again." 
-      }, { status: response.status });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
+    let response: Response;
+    try {
+      response = await fetch(imageUrl, {
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
     }
 
-    // 3. Process the Image
+    // Error Handling
+    if (!response.ok) {
+      console.error("Pollinations API Error:", response.status, response.statusText);
+      return NextResponse.json(
+        { error: `Image generation failed (${response.status}). Please try again.` },
+        { status: response.status }
+      );
+    }
+
+    // Process the Image (returned as binary blob)
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const mimeType = blob.type || "image/jpeg";
 
-    return NextResponse.json({ base64 });
+    return NextResponse.json({ base64, mimeType });
 
   } catch (error: any) {
-    console.error("Backend Crash:", error.message);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    if (error.name === "AbortError") {
+      console.error("Request timed out after 90 seconds");
+      return NextResponse.json(
+        { error: "Request timed out. Please try again with a simpler prompt." },
+        { status: 504 }
+      );
+    }
+    console.error("Backend Crash:", error.name, error.message, error.cause);
+    return NextResponse.json(
+      { error: `Server error: ${error.message}` },
+      { status: 500 }
+    );
   }
-}
+}
