@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
+import { getAuthSession } from "@/lib/auth";
+import { db } from "@/lib/db";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { prompt } = await req.json();
 
     if (!prompt) {
@@ -12,14 +22,14 @@ export async function POST(req: Request) {
     // Uses FLUX under the hood. Returns image as binary directly via GET request.
     const seed = Math.floor(Math.random() * 1000000);
     const encodedPrompt = encodeURIComponent(prompt);
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=1024&height=1024&seed=${seed}&nologo=true`;
+    const apiImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=1024&height=1024&seed=${seed}&nologo=true`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
 
     let response: Response;
     try {
-      response = await fetch(imageUrl, {
+      response = await fetch(apiImageUrl, {
         signal: controller.signal,
         headers: {
           "User-Agent": "Mozilla/5.0",
@@ -41,10 +51,27 @@ export async function POST(req: Request) {
     // Process the Image (returned as binary blob)
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-    const mimeType = blob.type || "image/jpeg";
+    const buffer = Buffer.from(arrayBuffer);
+    
+    // Save locally
+    const filename = `${crypto.randomBytes(16).toString("hex")}.jpg`;
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const filePath = path.join(uploadsDir, filename);
+    
+    fs.writeFileSync(filePath, buffer);
 
-    return NextResponse.json({ base64, mimeType });
+    const imageUrl = `/uploads/${filename}`;
+
+    // Save to Database
+    await db.generatedImage.create({
+      data: {
+        prompt,
+        imageUrl,
+        userId: session.user.id,
+      },
+    });
+
+    return NextResponse.json({ imageUrl, base64: buffer.toString("base64"), mimeType: blob.type || "image/jpeg" });
 
   } catch (error: any) {
     if (error.name === "AbortError") {
@@ -60,4 +87,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+}
