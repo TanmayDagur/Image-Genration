@@ -1,5 +1,6 @@
 "use client";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,7 +16,9 @@ export function ChatInterface({
   const [activeChatId, setActiveChatId] = useState<string | null>(chatId);
 
   const { messages, setMessages, sendMessage, status, error } = useChat({
-    body: { model, conversationId: activeChatId },
+    transport: new DefaultChatTransport({
+      api: `/api/chat?model=${model}&conversationId=${activeChatId || ''}`
+    })
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -78,13 +81,13 @@ export function ChatInterface({
         targetChatId = data.id;
         fetchedChatIdRef.current = targetChatId; // Prevent fetching history for this newly created chat
         setActiveChatId(targetChatId);
-        if (onChatCreated) onChatCreated(targetChatId);
+        if (onChatCreated && targetChatId) onChatCreated(targetChatId);
       } catch (e) {
         console.error("Failed to create chat", e);
       }
     }
 
-    sendMessage({ role: "user", content: input }, { body: { model, conversationId: targetChatId } });
+    sendMessage({ role: "user", parts: [{ type: "text", text: input }] }, { body: { model, conversationId: targetChatId } });
     setInput("");
   };
 
@@ -119,7 +122,7 @@ export function ChatInterface({
             {m.role === "user" ? (
               <div className="flex justify-end mb-2">
                 <div className="max-w-[75%] rounded-2xl bg-[var(--user-message)] px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap">
-                  {m.content}
+                  {m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
                 </div>
               </div>
             ) : (
@@ -130,14 +133,14 @@ export function ChatInterface({
                 <div className="min-w-0 flex-1">
                   <div className="prose max-w-none text-[15px] leading-6 text-[var(--foreground)] markdown-content">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {m.content || m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
+                      {m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
                     </ReactMarkdown>
                   </div>
                   <div className="mt-2 flex items-center gap-1">
                     <button className="action-button">👍</button>
                     <button className="action-button">👎</button>
                     <button className="action-button">↻</button>
-                    <button className="action-button" onClick={() => navigator.clipboard.writeText(m.content)}>Copy</button>
+                    <button className="action-button" onClick={() => navigator.clipboard.writeText(m.parts?.map((p: any) => p.type === 'text' ? p.text : '').join(''))}>Copy</button>
                   </div>
                 </div>
               </div>
