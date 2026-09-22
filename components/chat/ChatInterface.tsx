@@ -117,7 +117,7 @@ export function ChatInterface({
             {m.role === "user" ? (
               <div className="flex justify-end mb-2">
                 <div className="max-w-[75%] rounded-2xl bg-[var(--user-message)] px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap">
-                  {(m.parts || []).map((p: any) => (p.type === "text" ? p.text : "")).join("") || m.content}
+                  {(m.parts || []).map((p: any) => (p.type === "text" ? p.text : "")).join("") || (m as any).content}
                 </div>
               </div>
             ) : (
@@ -128,14 +128,14 @@ export function ChatInterface({
                 <div className="min-w-0 flex-1">
                   <div className="prose max-w-none text-[15px] leading-6 text-[var(--foreground)] markdown-content">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {(m.parts || []).map((p: any) => (p.type === "text" ? p.text : "")).join("") || m.content || ""}
+                      {(m.parts || []).map((p: any) => (p.type === "text" ? p.text : "")).join("") || (m as any).content || ""}
                     </ReactMarkdown>
                   </div>
                   <div className="mt-2 flex items-center gap-1">
                     <button className="action-button">👍</button>
                     <button className="action-button">👎</button>
                     <button className="action-button">↻</button>
-                    <button className="action-button" onClick={() => navigator.clipboard.writeText((m.parts || []).map((p: any) => p.type === 'text' ? p.text : '').join('') || m.content || "")}>Copy</button>
+                    <button className="action-button" onClick={() => navigator.clipboard.writeText((m.parts || []).map((p: any) => p.type === 'text' ? p.text : '').join('') || (m as any).content || "")}>Copy</button>
                   </div>
                 </div>
               </div>
