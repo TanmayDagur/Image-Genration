@@ -1,6 +1,5 @@
 "use client";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,11 +14,7 @@ export function ChatInterface({
   const [model, setModel] = useState("groq");
   const [activeChatId, setActiveChatId] = useState<string | null>(chatId);
 
-  const { messages, setMessages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: `/api/chat?model=${model}&conversationId=${activeChatId || ''}`
-    })
-  });
+  const { messages, setMessages, sendMessage, status, error } = useChat();
 
   const [isLoaded, setIsLoaded] = useState(false);
   const fetchedChatIdRef = useRef<string | null | undefined>(undefined);
@@ -122,7 +117,7 @@ export function ChatInterface({
             {m.role === "user" ? (
               <div className="flex justify-end mb-2">
                 <div className="max-w-[75%] rounded-2xl bg-[var(--user-message)] px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap">
-                  {m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
+                  {(m.parts || []).map((p: any) => (p.type === "text" ? p.text : "")).join("") || m.content}
                 </div>
               </div>
             ) : (
@@ -133,14 +128,14 @@ export function ChatInterface({
                 <div className="min-w-0 flex-1">
                   <div className="prose max-w-none text-[15px] leading-6 text-[var(--foreground)] markdown-content">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {m.parts?.map((p: any) => (p.type === "text" ? p.text : "")).join("")}
+                      {(m.parts || []).map((p: any) => (p.type === "text" ? p.text : "")).join("") || m.content || ""}
                     </ReactMarkdown>
                   </div>
                   <div className="mt-2 flex items-center gap-1">
                     <button className="action-button">👍</button>
                     <button className="action-button">👎</button>
                     <button className="action-button">↻</button>
-                    <button className="action-button" onClick={() => navigator.clipboard.writeText(m.parts?.map((p: any) => p.type === 'text' ? p.text : '').join(''))}>Copy</button>
+                    <button className="action-button" onClick={() => navigator.clipboard.writeText((m.parts || []).map((p: any) => p.type === 'text' ? p.text : '').join('') || m.content || "")}>Copy</button>
                   </div>
                 </div>
               </div>
