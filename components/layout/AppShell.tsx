@@ -9,15 +9,20 @@ export function AppShell({ userEmail }: { userEmail?: string | null }) {
   const [mode, setMode] = useState<"chat" | "image">("chat");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeImageChatId, setActiveImageChatId] = useState<string | null>(null);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)] font-sans">
       <Sidebar 
         isOpen={isMobileMenuOpen} 
         mode={mode} 
-        activeChatId={activeChatId}
+        activeChatId={mode === "chat" ? activeChatId : activeImageChatId}
         onSelectChat={(id) => {
-          setActiveChatId(id);
+          if (mode === "chat") {
+            setActiveChatId(id);
+          } else {
+            setActiveImageChatId(id);
+          }
           setIsMobileMenuOpen(false);
         }}
       />
@@ -66,7 +71,7 @@ export function AppShell({ userEmail }: { userEmail?: string | null }) {
             {mode === "chat" ? (
               <ChatInterface chatId={activeChatId} onChatCreated={setActiveChatId} />
             ) : (
-              <ImageGenerator />
+              <ImageGenerator chatId={activeImageChatId} onChatCreated={setActiveImageChatId} />
             )}
           </div>
         </main>

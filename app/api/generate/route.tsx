@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { prompt } = await req.json();
+    const { prompt, conversationId } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
@@ -62,16 +62,43 @@ export async function POST(req: Request) {
 
     const imageUrl = `/uploads/${filename}`;
 
-    // Save to Database
-    await db.generatedImage.create({
+    let currentConversationId = conversationId;
+    if (!currentConversationId) {
+      const conv = await db.conversation.create({
+        data: {
+          title: prompt.slice(0, 40),
+          userId: session.user.id,
+          isImage: true,
+        },
+      });
+      currentConversationId = conv.id;
+    }
+
+    // Save prompt as user message
+    await db.message.create({
       data: {
-        prompt,
-        imageUrl,
-        userId: session.user.id,
-      },
+        content: prompt,
+        role: "user",
+        conversationId: currentConversationId,
+      }
     });
 
-    return NextResponse.json({ imageUrl, base64: buffer.toString("base64"), mimeType: blob.type || "image/jpeg" });
+    // Save generated image as assistant message
+    const markdownImage = `![Generated Image](${imageUrl})`;
+    await db.message.create({
+      data: {
+        content: markdownImage,
+        role: "assistant",
+        conversationId: currentConversationId,
+      }
+    });
+
+    return NextResponse.json({ 
+      imageUrl, 
+      base64: buffer.toString("base64"), 
+      mimeType: blob.type || "image/jpeg",
+      conversationId: currentConversationId
+    });
 
   } catch (error: any) {
     if (error.name === "AbortError") {

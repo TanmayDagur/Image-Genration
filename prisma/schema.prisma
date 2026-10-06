@@ -27,6 +27,7 @@ model Conversation {
   messages  Message[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  isImage   Boolean   @default(false)
 }
 
 model Message {

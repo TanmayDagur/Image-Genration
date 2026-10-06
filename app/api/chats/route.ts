@@ -9,9 +9,14 @@ export async function GET(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get("type");
+    const isImage = type === "image";
+
     const conversations = await db.conversation.findMany({
       where: {
         userId: session.user.id,
+        isImage: isImage,
       },
       orderBy: {
         updatedAt: "desc",
@@ -33,12 +38,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title } = body;
+    const { title, isImage } = body;
 
     const conversation = await db.conversation.create({
       data: {
         title: title || "New Chat",
         userId: session.user.id,
+        isImage: isImage || false,
       },
     });
 

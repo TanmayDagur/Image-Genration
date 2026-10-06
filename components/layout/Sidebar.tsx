@@ -1,5 +1,5 @@
 import { ChatHistorySidebar } from "@/components/chat/ChatHistorySidebar";
-import { ImageHistory } from "@/components/image/ImageHistory";
+import { ImageHistorySidebar } from "@/components/image/ImageHistorySidebar";
 
 export function Sidebar({ 
   isOpen, 
@@ -27,19 +27,17 @@ export function Sidebar({
           ✨ AI Studio
         </h1>
         
-        {mode === "chat" && (
-          <button
-            onClick={() => onSelectChat(null)}
-            className="
-              flex w-full items-center justify-center gap-2
-              rounded-lg border border-[var(--border)] bg-[var(--surface)]
-              px-3 py-2.5 text-sm transition hover:bg-[var(--surface-tertiary)] text-[var(--foreground)]
-            "
-          >
-            <span className="text-lg">+</span>
-            <span>New Chat</span>
-          </button>
-        )}
+        <button
+          onClick={() => onSelectChat(null)}
+          className="
+            flex w-full items-center justify-center gap-2
+            rounded-lg border border-[var(--border)] bg-[var(--surface)]
+            px-3 py-2.5 text-sm transition hover:bg-[var(--surface-tertiary)] text-[var(--foreground)]
+          "
+        >
+          <span className="text-lg">+</span>
+          <span>New {mode === "chat" ? "Chat" : "Image Chat"}</span>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto mt-2 pb-4">
@@ -51,7 +49,9 @@ export function Sidebar({
             <ChatHistorySidebar activeChatId={activeChatId} onSelectChat={onSelectChat} />
           </div>
         ) : (
-          <ImageHistory />
+          <div className="px-2">
+            <ImageHistorySidebar activeChatId={activeChatId} onSelectChat={onSelectChat} />
+          </div>
         )}
       </div>
     </aside>

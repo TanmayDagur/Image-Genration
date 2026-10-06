@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-export function ChatInterface({ 
-  chatId, 
-  onChatCreated 
-}: { 
+export function ChatInterface({
+  chatId,
+  onChatCreated
+}: {
   chatId: string | null;
   onChatCreated?: (id: string) => void;
 }) {
@@ -26,7 +26,7 @@ export function ChatInterface({
   useEffect(() => {
     const fetchHistory = async () => {
       if (chatId === fetchedChatIdRef.current) return;
-      
+
       setIsLoaded(false);
       if (chatId) {
         try {
@@ -49,7 +49,7 @@ export function ChatInterface({
 
     fetchHistory();
   }, [chatId, setMessages]);
-  
+
   const [input, setInput] = useState("");
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -64,7 +64,7 @@ export function ChatInterface({
     if (!input.trim()) return;
 
     let targetChatId = activeChatId;
-    
+
     if (!targetChatId) {
       try {
         const res = await fetch("/api/chats", {
@@ -104,7 +104,7 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex flex-col h-full w-full mx-auto max-w-[850px] relative">
+    <div className="flex flex-col h-full w-full mx-auto relative">
       <div className="flex-1 overflow-y-auto px-4 pb-32">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] mt-20">
@@ -167,7 +167,7 @@ export function ChatInterface({
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[var(--background)] via-[var(--background)] to-transparent pt-10">
-        <div className="w-full rounded-2xl border border-[var(--input-border)] bg-[var(--input-background)] shadow-[var(--shadow-sm)] focus-within:shadow-[var(--shadow-md)] flex flex-col">
+        <div className="w-full max-w-[850px] mx-auto rounded-2xl border border-[var(--input-border)] bg-[var(--input-background)] shadow-[var(--shadow-sm)] focus-within:shadow-[var(--shadow-md)] flex flex-col">
           <textarea
             placeholder="Ask anything..."
             value={input}
